@@ -71,8 +71,6 @@ switch($method){
                     $stmt->execute();
                     $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
-                    
-
                     if ($result !== false){
 
                         $name = $result['name'];
@@ -85,7 +83,7 @@ switch($method){
                     echo "La catégorie '$name' a été supprimée avec succès.";
 
                     } else {
-                        echo "Aucune des catégories n'a un identifiant égal à $id";
+                        echo "Aucune des catégories n'a un identifiant égal à $id.";
                     }
 
                 } else {
@@ -106,6 +104,14 @@ switch($method){
                     $id = $_PUT['id'];
                     $name = $_PUT['name'];
 
+                    $sql = "SELECT name FROM categories WHERE id = :id";
+                    $stmt = $conn->prepare($sql); 
+                    $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+                    $stmt->execute();
+                    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                    if ($result !== false){
+
                     $sql = "UPDATE categories SET name = :name where id = :id";
                     $stmt = $conn->prepare($sql); 
                     $stmt->bindParam(':id', $id, PDO::PARAM_INT);
@@ -114,15 +120,18 @@ switch($method){
 
                     echo "La catégorie avec l'id $id a été rémplacé par $name.";
 
+                    } else {
+                        echo "Aucune des catégories n'a un identifiant égal à $id.";
+                    }
+
                 } else {
                      echo "Insérer 'id' dans la clé et l'id de la catégorie que vous souhaitez modifier dans value, ensuite inserez 'name' comme deuxième clé et le nouveau nom que vous souhaitez donner à la catégorie. Utilisez la méthode GET pour connaître l'id de la catégorie.";
                 }
-
-
-
         
             }
         
 }
 
 ?>
+
+
