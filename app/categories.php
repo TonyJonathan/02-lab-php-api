@@ -19,7 +19,24 @@ switch($method){
         echo json_encode(['Status: ' => "success", 'Data: ' => $result]);
         break;
     
-    case 'POST': 
+        case 'POST':
+
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                
+                if(isset($_POST['name']) && $_POST['name'] !== ""){
+                    $name = $_POST['name']; 
+
+                    $sql = "INSERT INTO categories(name) VALUES (:name)";
+                    $stmt = $conn->prepare($sql); 
+                    $stmt->bindParam(':name', $name, PDO::PARAM_STR);
+                    $stmt->execute();
+                    
+                } else {
+                 echo "Insérer 'name' dans la clé et le nom de la clé dans value";
+                }
+
+            }
+        break;
 
         
 }
