@@ -16,7 +16,7 @@ switch($method){
 
         $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        echo json_encode(['Status: ' => "success", 'Data: ' => $result]);
+        echo json_encode(['Status: ' => 'success', 'Data: ' => $result]);
         break;
     
         case 'POST':
@@ -26,15 +26,30 @@ switch($method){
                 if(isset($_POST['name']) && $_POST['name'] !== ""){
                     $name = $_POST['name']; 
 
-                    $sql = "INSERT INTO categories(name) VALUES (:name)";
-                    $stmt = $conn->prepare($sql); 
-                    $stmt->bindParam(':name', $name, PDO::PARAM_STR);
-                    $stmt->execute();
+                    $checkIfExists = "SELECT COUNT(*) FROM categories WHERE name = :name";
+                    $stmtCheck = $conn->prepare($checkIfExists); 
+                    $stmtCheck->bindParam(':name', $name, PDO::PARAM_STR);
+                    $stmtCheck->execute();
+                    $count = $stmtCheck->fetchColumn();
 
-                    echo "La catégorie '$name' a été ajoutée avec succès.";
+                    if ($count > 0){
+                        echo "La catégorie '$name' existe déja."; 
+                    } else {
+                        
+                        $sql = "INSERT INTO categories(name) VALUES (:name)";
+                        $stmt = $conn->prepare($sql); 
+                        $stmt->bindParam(':name', $name, PDO::PARAM_STR);
+                        $stmt->execute();
+    
+                        echo "La catégorie '$name' a été ajoutée avec succès.";
+                    }
+
+
+
+                   
 
                 } else {
-                 echo "Insérer 'name' dans la clé et le nom de la clé dans value";
+                 echo "Insérer 'name' dans la clé et le nom de la nouvelle catégorie dans value";
                 }
 
             }
@@ -73,7 +88,7 @@ switch($method){
                 
                 if(isset($_PUT['id']) && $_PUT['id'] !== "" && is_numeric($_PUT['id']) && isset($_PUT['name']) && $_PUT['name'] !== ""){
                     $id = $_PUT['id'];
-                    $name = $_PUT['name'];  
+                    $name = $_PUT['name'];
 
                     $sql = "UPDATE categories SET name = :name where id = :id";
                     $stmt = $conn->prepare($sql); 
