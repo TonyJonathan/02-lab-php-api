@@ -30,14 +30,67 @@ switch($method){
                     $stmt = $conn->prepare($sql); 
                     $stmt->bindParam(':name', $name, PDO::PARAM_STR);
                     $stmt->execute();
-                    
+
+                    echo "La catégorie '$name' a été ajoutée avec succès.";
+
                 } else {
                  echo "Insérer 'name' dans la clé et le nom de la clé dans value";
                 }
 
             }
+
         break;
 
+        case 'DELETE': 
+            // permet de récuperer le contenu brut de la requêtes et de pouvoir utiliser '$_DELETE' qui n'existe pas de base
+            parse_str(file_get_contents("php://input"), $_DELETE);
+
+            if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
+                
+                if(isset($_DELETE['id']) && $_DELETE['id'] !== ""){
+                    $id = $_DELETE['id']; 
+
+                    $sql = "DELETE FROM categories WHERE id = :id";
+                    $stmt = $conn->prepare($sql); 
+                    $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+                    $stmt->execute();
+
+                    echo "La catégorie avec l'id $id a été supprimée avec succès.";
+
+                } else {
+                     echo "Insérer 'id' dans la clé et l'id de la catégorie dans value, utilisez la méthode GET pour connaître l'id de la catégorie";
+                }
+
+            }
+
+        break;
+
+        case 'PUT': 
+
+            parse_str(file_get_contents("php://input"), $_PUT);
+
+            if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+                
+                if(isset($_PUT['id']) && $_PUT['id'] !== "" && is_numeric($_PUT['id']) && isset($_PUT['name']) && $_PUT['name'] !== ""){
+                    $id = $_PUT['id'];
+                    $name = $_PUT['name'];  
+
+                    $sql = "UPDATE categories SET name = :name where id = :id";
+                    $stmt = $conn->prepare($sql); 
+                    $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+                    $stmt->bindParam(':name', $name, PDO::PARAM_STR);
+                    $stmt->execute();
+
+                    echo "La catégorie avec l'id $id a été rémplacé par $name.";
+
+                } else {
+                     echo "Insérer 'id' dans la clé et l'id de la catégorie que vous souhaitez modifier dans value, ensuite inserez 'name' comme deuxième clé et le nouveau nom que vous souhaitez donner à la catégorie. Utilisez la méthode GET pour connaître l'id de la catégorie.";
+                }
+
+
+
+        
+            }
         
 }
 
