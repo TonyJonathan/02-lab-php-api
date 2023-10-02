@@ -65,12 +65,28 @@ switch($method){
                 if(isset($_DELETE['id']) && $_DELETE['id'] !== ""){
                     $id = $_DELETE['id']; 
 
-                    $sql = "DELETE FROM categories WHERE id = :id";
+                    $sql = "SELECT name FROM categories WHERE id = :id";
                     $stmt = $conn->prepare($sql); 
                     $stmt->bindParam(':id', $id, PDO::PARAM_INT);
                     $stmt->execute();
+                    $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
-                    echo "La catégorie avec l'id $id a été supprimée avec succès.";
+                    
+
+                    if ($result !== false){
+
+                        $name = $result['name'];
+                        
+                        $sql = "DELETE FROM categories WHERE id = :id";
+                        $stmt = $conn->prepare($sql); 
+                        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+                        $stmt->execute();
+
+                    echo "La catégorie '$name' a été supprimée avec succès.";
+
+                    } else {
+                        echo "Aucune des catégories n'a un identifiant égal à $id";
+                    }
 
                 } else {
                      echo "Insérer 'id' dans la clé et l'id de la catégorie dans value, utilisez la méthode GET pour connaître l'id de la catégorie";
