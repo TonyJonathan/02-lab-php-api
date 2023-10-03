@@ -46,12 +46,66 @@ switch($method){
                     $stmt->execute();
 
                     echo "L'url à bien été ajouté à $nameResult.";
+
                 } else {
                     echo "Cet identifiant ne correspond à aucune technologie.";
                 }
 
+            } else { 
+                echo "Veuillez inserer 'id' dans la clé et la valeur de l'identifiant de la technologie concernée, il faut également insérer 'url' dans une autre clé et la valeur contiendra l'url de la ressource.";
             }
         }
+
+    break;
+
+    case 'DELETE': 
+
+        parse_str(file_get_contents("php://input"), $_DELETE);
+
+        if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
+            
+            if (isset($_DELETE['id']) && $_DELETE['id'] ==! ''){
+                $id = $_DELETE['id'];
+                
+                $conn = new PDO("$servername;dbname=$dbname; charset=utf8", $username, $password_db); 
+
+                $sql = "SELECT technology_id, url from ressources where id = :id";
+                $stmt = $conn->prepare($sql);
+                $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+                $stmt->execute(); 
+                $result = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if($result !== false){
+                    $urlResult = $result['url'];
+                    $idResult = $result['technology_id'];
+
+                    // Récupère le nom de la tehcnologie
+                    $sql = "SELECT name FROM technologies where id = :id";
+                    $stmt = $conn->prepare($sql);
+                    $stmt->bindParam(':id', $idResult, PDO::PARAM_INT);
+                    $stmt->execute();
+                    $technologie = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                    $technologieName = $technologie['name'];
+
+                    $sql = "DELETE FROM ressources where id = :id";
+                    $stmt = $conn->prepare($sql);
+                    $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+                    $stmt->execute(); 
+
+                    echo "La ressource $urlResult de la technologie $technologieName à bien été supprimée."; 
+                } else {
+                    echo "Aucune technologie ne correspond à cet identifiant.";
+                }
+
+
+
+
+            }
+
+        }
+
+
 }
 
 
