@@ -44,10 +44,6 @@ switch($method){
                         echo "La catégorie '$name' a été ajoutée avec succès.";
                     }
 
-
-
-                   
-
                 } else {
                  echo "Insérer 'name' dans la clé et le nom de la nouvelle catégorie dans value";
                 }
