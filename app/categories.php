@@ -45,7 +45,7 @@ switch($method){
                     }
 
                 } else {
-                 echo "Insérer 'name' dans la clé et le nom de la nouvelle catégorie dans value";
+                 echo "Insérer 'name' dans la clé et le nom de la nouvelle catégorie dans value.";
                 }
 
             }

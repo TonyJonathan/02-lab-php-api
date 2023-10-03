@@ -56,7 +56,7 @@ switch($method){
                     // Divise la chaine en tableau d'id 
                     $arrayIdCategory = explode(',', $idCategories);
                     
-                    // On effectue un foreach pour avoir chque id individuellement 
+                    // On effectue un foreach pour avoir chaque id individuellement 
 
                     foreach($arrayIdCategory as $rowId){
                     $sql = "SELECT name FROM categories where id in (:rowId)";
@@ -66,7 +66,7 @@ switch($method){
                     $stmt->execute();
                     $nameResult = $stmt->fetch(PDO::FETCH_ASSOC);
                     
-                    // Vérification de l'existance de la catégorie (en fonction de si son id renvoie une valeur valeur name)
+                    // Vérification de l'existence de la catégorie (en fonction de si son id renvoie une valeur valeur name)
                     if($nameResult){
                         // Existance vérifiée, on associe l'id du nom de la technologie créee aux catégories sélectionnées existante
                         $sql = "INSERT INTO technologies_categories (technology_id, category_id) VALUES (:technology_id,:category_id)";
@@ -88,12 +88,10 @@ switch($method){
             }
               
         } else {
-            echo "Insérer 'name' dans la clé et l'id ou les id dans value (exemple de value: 1,3,8).";
+            echo "Insérer 'name' dans la clé et l'id ou les id des catégories à associer dans value (exemple de value: 1,3,8).";
         }
 
         break;
 }
-
-
 
 ?>
