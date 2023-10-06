@@ -22,7 +22,7 @@ switch($method){
     
         case 'POST':
 
-            if(isset($_POST['name']) && $_POST['name'] !== "" && isset($_POST['categories']) && $_POST['categories'] !== ""){
+            if(isset($_POST['name']) && $_POST['name'] !== "" && isset($_POST['categories']) && $_POST['categories'] !== "" && isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK){
                 $name = $_POST['name']; 
                 $idCategories = $_POST['categories']; 
 
@@ -32,15 +32,33 @@ switch($method){
                 $stmtCheck->execute();
                 $count = $stmtCheck->fetchColumn();
 
+      
+
                 if ($count > 0){
                     echo "La technologie '$name' existe déja."; 
                 } else {
+                    
+                    $logoName = $_FILES['logo']['name']; 
+                    $logoPath = '/var/www/html/logo/';;
+
+                    // variable qui stocke le chemin temporaire du fichier téléchargé
+                    $logoTempPath = $_FILES['logo']['tmp_name']; 
+
+                    // on concatène le chemin jusqu'au dossier logo avec le nom du logo pour avoir l'adresse complete 
+                    $logoFullPath = $logoPath . $logoName;
+
+                    // Déplacez le fichier téléchargé vers le dossier spécifié
+                    move_uploaded_file($logoTempPath, $logoFullPath);
 
                     // on créer la technologie
-                    $sql = "INSERT INTO technologies(name) VALUES (:name)";
+                    $sql = "INSERT INTO technologies(name, logo_name, logo_path) VALUES (:name, :logoName, :logoPath)";
                     $stmt = $conn->prepare($sql); 
                     $stmt->bindParam(':name', $name, PDO::PARAM_STR);
+                    $stmt->bindParam(':logoName', $logoName, PDO::PARAM_STR);
+                    $stmt->bindParam(':logoPath', $logoFullPath, PDO::PARAM_STR);
                     $stmt->execute();
+
+                    echo "Vous avez ajouter le logo '$logoName' \n";
 
                     // On récupere son ID
                     $sql = "SELECT id FROM technologies WHERE name = :name"; 
@@ -59,39 +77,40 @@ switch($method){
                     // On effectue un foreach pour avoir chaque id individuellement 
 
                     foreach($arrayIdCategory as $rowId){
-                    $sql = "SELECT name FROM categories where id in (:rowId)";
+                        $sql = "SELECT name FROM categories where id in (:rowId)";
 
-                    $stmt = $conn->prepare($sql); 
-                    $stmt->bindParam(':rowId', $rowId, PDO::PARAM_INT);
-                    $stmt->execute();
-                    $nameResult = $stmt->fetch(PDO::FETCH_ASSOC);
-                    
-                    // Vérification de l'existence de la catégorie (en fonction de si son id renvoie une valeur valeur name)
-                    if($nameResult){
-                        // Existance vérifiée, on associe l'id du nom de la technologie créee aux catégories sélectionnées existante
-                        $sql = "INSERT INTO technologies_categories (technology_id, category_id) VALUES (:technology_id,:category_id)";
-                        $stmt = $conn->prepare($sql);
-                        $stmt->bindParam(':technology_id', $technology_id, PDO::PARAM_INT); 
-                        $stmt->bindParam(':category_id', $rowId, PDO::PARAM_INT); 
-                        $stmt->execute(); 
+                        $stmt = $conn->prepare($sql); 
+                        $stmt->bindParam(':rowId', $rowId, PDO::PARAM_INT);
+                        $stmt->execute();
+                        $nameResult = $stmt->fetch(PDO::FETCH_ASSOC);
+                        
+                        // Vérification de l'existence de la catégorie (en fonction de si son id renvoie une valeur valeur name)
+                        if($nameResult){
+                            // Existance vérifiée, on associe l'id du nom de la technologie créee aux catégories sélectionnées existante
+                            $sql = "INSERT INTO technologies_categories (technology_id, category_id) VALUES (:technology_id,:category_id)";
+                            $stmt = $conn->prepare($sql);
+                            $stmt->bindParam(':technology_id', $technology_id, PDO::PARAM_INT); 
+                            $stmt->bindParam(':category_id', $rowId, PDO::PARAM_INT); 
+                            $stmt->execute(); 
 
-                        $categoryName = $nameResult['name']; 
+                            $categoryName = $nameResult['name']; 
 
-                        echo "La catégorie '$categoryName' est maintenant associée à '$name'.\n"; 
+                            echo "La catégorie '$categoryName' est maintenant associée à '$name'.\n"; 
 
-                    } else {
-                        // si l'id rentré n'a pas de name dans le tableau
-                        echo "L'identifiant $rowId ne correspond à aucune catégorie.\n";
-                    }
+                        } else {
+                            // si l'id rentré n'a pas de name dans le tableau
+                            echo "L'identifiant $rowId ne correspond à aucune catégorie.\n";
+                        }
+                    }   
                 }
-
-            }
               
-        } else {
-            echo "Insérer 'name' dans la clé et l'id ou les id des catégories à associer dans value (exemple de value: 1,3,8).";
-        }
+            } else {
+                echo "Insérer 'name' dans la clé, le nom de la nouvelle technologie en value. Insérer également 'id' en dans une autre clé et ajouter la ou les identifiants des catégories à associer dans value (exemple de value: 1,3,8). La 3e et dernière clé a inserer est 'logo', suivie de la value qui sera un fichier présent dns le dossier logo";
+            }
 
         break;
+
+
 }
 
 ?>

@@ -107,14 +107,14 @@ switch($method){
                     $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
                     if ($result !== false){
-
+                    $oldName = $result['name'];
                     $sql = "UPDATE categories SET name = :name where id = :id";
                     $stmt = $conn->prepare($sql); 
                     $stmt->bindParam(':id', $id, PDO::PARAM_INT);
                     $stmt->bindParam(':name', $name, PDO::PARAM_STR);
                     $stmt->execute();
 
-                    echo "La catégorie avec l'id $id a été rémplacé par $name.";
+                    echo "La catégorie '$oldName' a été rémplacé par '$name'.";
 
                     } else {
                         echo "Aucune des catégories n'a un identifiant égal à $id.";
