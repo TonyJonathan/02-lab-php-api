@@ -234,16 +234,65 @@ switch($method){
                         $stmt->execute();
 
                         echo "$name à bien été modifié par $new_name.\n";
+
+                        $sql = 'SELECT logo_name FROM technologies WHERE name = :name';
+                        $stmt = $conn->prepare($sql);
+                        $stmt->bindParam(':name', $new_name, PDO::PARAM_STR); 
+                        $stmt->execute();
+                        $logoResult = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                        if($logoResult['logo_name'] !== null){
+
+                            
+                            $logoName = $logoResult['logo_name'];
+                            $logoOldPath = '/var/www/html/logo/' . $logoName;
+
+                            echo "$logoName \n";
+                            echo "$logoOldPath \n"; 
+
+                            $logoNameParts = explode('.', $logoName);
+
+                            $logoNameExtension = $logoNameParts[1]; 
+
+                            $logoNewName = $new_name . '.' . $logoNameExtension;
+
+                            $logoNewPath = '/var/www/html/logo/' . $logoNewName;
+
+                            echo "$logoNewName \n";
+                            echo "$logoNewPath \n";
+
+                            $sql = "UPDATE technologies SET logo_name = :logoName, logo_path = :logoPath WHERE name = :name"; 
+                            $stmt = $conn->prepare($sql);
+                            $stmt->bindParam(':logoName', $logoNewName, PDO::PARAM_STR);
+                            $stmt->bindParam(':logoPath', $logoNewPath, PDO::PARAM_STR);
+                            $stmt->bindParam(':name', $new_name, PDO::PARAM_STR); 
+                            $stmt->execute();
+
+                            echo "Logo_name et logo_path ont été renommés dans la base de données. \n";
+
+                            if(file_exists($logoOldPath)){
+
+                                if(rename($logoOldPath, $logoNewPath)){
+
+                                    echo "Le fichier à été renommé avec succès.\n";
+                                    
+                                } else {
+                                    echo "Erreur lors du renommage du fichier. \n";
+
+                                }
+                            } else {
+                                echo "Aucun logo pour cette technologie. \n";
+                            }
+                        }
+
+
+
                   
                     }
                 }
              
             }
 
-            // }
-
-          
-            
         break;
         }
 }
