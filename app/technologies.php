@@ -247,8 +247,6 @@ switch($method){
                             $logoName = $logoResult['logo_name'];
                             $logoOldPath = '/var/www/html/logo/' . $logoName;
 
-                            echo "$logoName \n";
-                            echo "$logoOldPath \n"; 
 
                             $logoNameParts = explode('.', $logoName);
 
@@ -300,7 +298,7 @@ switch($method){
             if(isset($_DELETE['name']) && $_DELETE['name'] !== ""){
                 $name = $_DELETE['name']; 
 
-                $sql = "SELECT name, logo_path FROM technologies WHERE name = :name";
+                $sql = "SELECT id, name, logo_path FROM technologies WHERE name = :name";
                 $stmt =$conn->prepare($sql);
                 $stmt->bindParam(':name', $name, PDO::PARAM_STR); 
                 $stmt->execute(); 
@@ -308,6 +306,8 @@ switch($method){
                 $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
                 if($result){
+
+                    $id = $result['id']; 
                     
                     if(isset($_DELETE['logo'])){
                         
@@ -333,6 +333,44 @@ switch($method){
                         } else {
                             echo "Aucun logo n'est lié à la technologie $name. \n";
                         } 
+                    }
+
+                    if(isset($_DELETE['categories']) && $_DELETE['categories'] !== ""){
+
+
+                        $categories = $_DELETE['categories']; 
+                        $arrayIdCategory = explode(',', $categories);
+
+                        
+
+                        foreach($arrayIdCategory as $categoryId){
+
+                            $sql = "SELECT categories.name FROM technologies RIGHT JOIN technologies_categories ON technologies.id = technologies_categories.technology_id LEFT JOIN categories ON technologies_categories.category_id = categories.id WHERE technologies.name = :name AND categories.id = :id";
+                            $stmt = $conn->prepare($sql);
+                            $stmt->bindParam(':name', $name, PDO::PARAM_STR);
+                            $stmt->bindParam(':id', $categoryId, PDO::PARAM_INT);
+                            $stmt->execute();
+                            $resultId = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                            if($resultId){
+                                $nameResult = $resultId['name'];
+                                $sql = "DELETE FROM technologies_categories WHERE technology_id = :technology_id AND category_id = :category_id";
+                                $stmt = $conn->prepare($sql);
+                                $stmt->bindParam(':technology_id', $id, PDO::PARAM_INT);
+                                $stmt->bindParam(':category_id', $categoryId, PDO::PARAM_INT);
+                                $stmt->execute();
+
+                                echo "La catégorie '$nameResult' n'est plus lié à la technologie '$name'. \n";
+
+                            } else {
+                                echo "La technologie '$name' n'est pas liée à une catégories dont l'identifiant est '$categoryId'. \n"; 
+                            }      
+                              
+                            
+                        }
+
+                      
+
                     }
                     
                     
