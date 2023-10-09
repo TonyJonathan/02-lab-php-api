@@ -129,7 +129,55 @@ switch($method){
                 if($nameResult){
 
 
+                    if(isset($_SERVER['HTTP_CATEGORIES']) && $_SERVER['HTTP_CATEGRORIES'] !== ""){
 
+                        $newCategories = $_SERVER['HTTP_CATEGRORIES']; 
+                        $arrayIdCategory = explode(',', $newCategories);
+
+                        $sql = "select categories.id from technologies right join technologies_categories on technologies.id = technologies_categories.technology_id left join categories on technologies_categories.category_id = categories.id where technologies.name = ':name'";
+                        $stmt = $conn->prepare($sql);
+                        $stmt->bindParam(':name', $name, PDO::PARAM_STR);
+                        $stmt->execute();
+
+                        $categoriesId = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                        
+
+                        foreach($categoriesId as $categoryId){
+                            $sql = "DELETE FROM technologies_categories WHERE technology_id = :technology_id AND category_id = :category_id";
+                            $stmt = $conne->prepare($sql);
+                            $stmt->bindParam(':technology_id', $idResult, PDO::PARAM_INT);
+                            $stmt->bindParam(':category_id', $categoryId, PDO::PARAM_INT);
+                            $stmt->execute();
+                        }
+
+                        foreach($arrayIdCategory as $rowId){
+                            $sql = "SELECT name FROM categories where id in (:rowId)";
+    
+                            $stmt = $conn->prepare($sql); 
+                            $stmt->bindParam(':rowId', $rowId, PDO::PARAM_INT);
+                            $stmt->execute();
+                            $nameResult = $stmt->fetch(PDO::FETCH_ASSOC);
+                            
+                            // Vérification de l'existence de la catégorie (en fonction de si son id renvoie une valeur valeur name)
+                            if($nameResult){
+                                // Existance vérifiée, on associe l'id du nom de la technologie créee aux catégories sélectionnées existante
+                                $sql = "INSERT INTO technologies_categories (technology_id, category_id) VALUES (:technology_id,:category_id)";
+                                $stmt = $conn->prepare($sql);
+                                $stmt->bindParam(':technology_id', $technology_id, PDO::PARAM_INT); 
+                                $stmt->bindParam(':category_id', $rowId, PDO::PARAM_INT); 
+                                $stmt->execute(); 
+    
+                                $categoryName = $nameResult['name']; 
+    
+                                echo "La catégorie '$categoryName' est maintenant associée à '$name'.\n"; 
+    
+                            } else {
+                                // si l'id rentré n'a pas de name dans le tableau
+                                echo "L'identifiant $rowId ne correspond à aucune catégorie.\n";
+                            }
+                    }
+
+                }
                 }
              
             }
