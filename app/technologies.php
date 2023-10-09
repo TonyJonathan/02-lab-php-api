@@ -32,14 +32,12 @@ switch($method){
                 $stmtCheck->execute();
                 $count = $stmtCheck->fetchColumn();
 
-      
-
                 if ($count > 0){
                     echo "La technologie '$name' existe déja."; 
                 } else {
                     
                     $logoName = $_FILES['logo']['name']; 
-                    $logoPath = '/var/www/html/logo/';;
+                    $logoPath = '/var/www/html/logo/';
 
                     // variable qui stocke le chemin temporaire du fichier téléchargé
                     $logoTempPath = $_FILES['logo']['tmp_name']; 
@@ -105,12 +103,43 @@ switch($method){
                 }
               
             } else {
-                echo "Insérer 'name' dans la clé, le nom de la nouvelle technologie en value. Insérer également 'id' en dans une autre clé et ajouter la ou les identifiants des catégories à associer dans value (exemple de value: 1,3,8). La 3e et dernière clé a inserer est 'logo', suivie de la value qui sera un fichier présent dns le dossier logo";
+                echo "Insérer 'name' dans la clé, le nom de la nouvelle technologie en value. Insérer également 'id' en dans une autre clé et ajouter la ou les identifiants des catégories à associer dans value (exemple de value: 1,3,8). La 3e et dernière clé a inserer est 'logo', suivie de la value qui sera un fichier présent dans le dossier logo";
             }
 
         break;
 
+        case 'PUT' : 
 
+            if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+
+                if(isset($_SERVER['HTTP_NAME']) && $_SERVER['HTTP_NAME'] !== "" ){
+                    $name = $_SERVER['HTTP_NAME'];
+                    
+                    // verifie que le nom rentré existe bien
+                    $sql = "SELECT name, id FROM technologies where name = :name";
+                    $stmt = $conn->prepare($sql);
+                    $stmt->bindParam(':name', $name, PDO::PARAM_STR);
+                    $stmt->execute();
+
+                    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                    $nameResult = $result['name'];
+                    $idResult = $result['id'];
+
+                if($nameResult){
+
+
+
+                }
+             
+            }
+
+            // }
+
+          
+            
+        break;
+        }
 }
 
 ?>
