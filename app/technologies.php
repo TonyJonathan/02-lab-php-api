@@ -108,23 +108,23 @@ switch($method){
 
         break;
 
-        case 'PUT' : 
+    case 'PUT' : 
 
-            if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+        if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
 
-                if(isset($_SERVER['HTTP_NAME']) && $_SERVER['HTTP_NAME'] !== "" ){
-                    $name = $_SERVER['HTTP_NAME'];
-                    
-                    // verifie que le nom rentré existe bien
-                    $sql = "SELECT name, id FROM technologies where name = :name";
-                    $stmt = $conn->prepare($sql);
-                    $stmt->bindParam(':name', $name, PDO::PARAM_STR);
-                    $stmt->execute();
+            if(isset($_SERVER['HTTP_NAME']) && $_SERVER['HTTP_NAME'] !== "" ){
+                $name = $_SERVER['HTTP_NAME'];
+                
+                // verifie que le nom rentré existe bien
+                $sql = "SELECT name, id FROM technologies where name = :name";
+                $stmt = $conn->prepare($sql);
+                $stmt->bindParam(':name', $name, PDO::PARAM_STR);
+                $stmt->execute();
 
-                    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+                $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
-                    $nameResult = $result['name'];
-                    $idResult = $result['id'];
+                $nameResult = $result['name'];
+                $idResult = $result['id'];
 
                 if($nameResult){
 
@@ -146,14 +146,14 @@ switch($method){
                             return isset($mimeToExtensionMap[$mimeType]) ? $mimeToExtensionMap[$mimeType] : 'png';
                         }
                         
-                       
+                    
                         $file_extension = isset($_SERVER['CONTENT_TYPE']) ? getExtensionFromMimeType($_SERVER['CONTENT_TYPE']) : 'png';
-    
+
                         $logoName = $name . "." . $file_extension;
                         $logoPath = '/var/www/html/logo/' . $logoName;
-    
+
                         file_put_contents($logoPath, $input); 
-    
+
                         echo "L'image '$logoName' a été reçue avec succès. \n";
 
                         $sql = 'UPDATE technologies set logo_name = :logoName, logo_path = :logoPath WHERE name = :name'; 
@@ -181,7 +181,7 @@ switch($method){
                         foreach($categoriesId as $categoryIdArray){
 
                             foreach($categoryIdArray as $categoryId){
-                           
+                        
                                 $sql = "DELETE FROM technologies_categories WHERE technology_id = :technology_id AND category_id = :category_id";
                                 $stmt = $conn->prepare($sql);
                                 $stmt->bindParam(':technology_id', $idResult, PDO::PARAM_INT);
@@ -193,7 +193,7 @@ switch($method){
 
                         foreach($arrayIdCategory as $rowId){
                             $sql = "SELECT name FROM categories where id in (:rowId)";
-    
+
                             $stmt = $conn->prepare($sql); 
                             $stmt->bindParam(':rowId', $rowId, PDO::PARAM_INT);
                             $stmt->execute();
@@ -207,11 +207,11 @@ switch($method){
                                 $stmt->bindParam(':technology_id', $idResult, PDO::PARAM_INT); 
                                 $stmt->bindParam(':category_id', $rowId, PDO::PARAM_INT); 
                                 $stmt->execute(); 
-    
+
                                 $categoryName = $nameResult['name']; 
-    
+
                                 echo "La catégorie '$categoryName' est maintenant associée à '$name'.\n"; 
-    
+
                             } else {
                                 // si l'id rentré n'a pas de name dans le tableau
                                 echo "L'identifiant $rowId ne correspond à aucune catégorie.\n";
@@ -222,7 +222,7 @@ switch($method){
 
 
                     // modifie le nom actuelle par le nouveau
-             
+            
                     if(isset($_SERVER['HTTP_NEWNAME']) && $_SERVER['HTTP_NEWNAME'] !== "" ){
 
                         $new_name = $_SERVER['HTTP_NEWNAME'];
@@ -284,16 +284,62 @@ switch($method){
                                 echo "Aucun logo pour cette technologie. \n";
                             }
                         }
-
-
-
-                  
                     }
                 }
-             
             }
+        } 
+    break;
 
-        break;
+    case 'DELETE':
+
+        // permet de récuperer le contenu brut de la requêtes et de pouvoir utiliser '$_DELETE' qui n'existe pas de base
+        parse_str(file_get_contents("php://input"), $_DELETE);
+
+        if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
+            
+            if(isset($_DELETE['name']) && $_DELETE['name'] !== ""){
+                $name = $_DELETE['name']; 
+
+                $sql = "SELECT name, logo_path FROM technologies WHERE name = :name";
+                $stmt =$conn->prepare($sql);
+                $stmt->bindParam(':name', $name, PDO::PARAM_STR); 
+                $stmt->execute(); 
+
+                $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if($result){
+                    
+                    if(isset($_DELETE['logo'])){
+                        
+                        if($result['logo_path'] !== null || $result['logo_path'] !== ""){
+                            $logoPath = $result['logo_path']; 
+
+                            
+
+                            if(file_exists($logoPath)){
+                                if(unlink($logoPath)){
+                                    echo "Le logo lié à la technologie $name à bien été supprimé. \n";
+                                } else {
+    
+                                    echo "Erreur lors de la suppression du logo. \n";
+                                }
+                            }
+
+                            $sql = "UPDATE technologies SET logo_name = NULL, logo_path = NULL WHERE name = :name";
+                            $stmt = $conn->prepare($sql); 
+                            $stmt->bindParam(':name', $name, PDO::PARAM_STR);
+                            $stmt->execute();
+
+                        } else {
+                            echo "Aucun logo n'est lié à la technologie $name. \n";
+                        } 
+                    }
+                    
+                    
+                } else {
+                    echo "Il n'existe pas de technologies portant le nom $name. \n";
+                }
+            }
         }
 }
 
