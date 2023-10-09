@@ -129,12 +129,48 @@ switch($method){
                 if($nameResult){
 
 
-                    if(isset($_SERVER['HTTP_CATEGORIES']) && $_SERVER['HTTP_CATEGRORIES'] !== ""){
+                    if(isset($_SERVER['CONTENT_TYPE'])){
+                        $input = file_get_contents("php://input");
 
-                        $newCategories = $_SERVER['HTTP_CATEGRORIES']; 
+                        function getExtensionFromMimeType($mimeType) {
+                            // Logique pour mapper les types de contenu MIME à des extensions de fichiers
+                            $mimeToExtensionMap = array(
+                                'image/jpeg' => 'jpg',
+                                'image/png'  => 'png',
+                                'image/gif'  => 'gif',
+                                'image/webp' => 'webp',
+                                // Ajoutez d'autres mappages au besoin
+                            );
+                        
+                            // Recherche de l'extension dans le tableau
+                            return isset($mimeToExtensionMap[$mimeType]) ? $mimeToExtensionMap[$mimeType] : 'png';
+                        }
+                        
+                       
+                        $file_extension = isset($_SERVER['CONTENT_TYPE']) ? getExtensionFromMimeType($_SERVER['CONTENT_TYPE']) : 'png';
+    
+                        $logoName = $name . "." . $file_extension;
+                        $logoPath = '/var/www/html/logo/' . $logoName;
+    
+                        file_put_contents($logoPath, $input); 
+    
+                        echo "L'image '$logoName' a été reçue avec succès. \n";
+
+                        $sql = 'UPDATE technologies set logo_name = :logoName, logo_path = :logoPath WHERE name = :name'; 
+                        $stmt = $conn->prepare($sql); 
+                        $stmt->bindParam(':logoName', $logoName, PDO::PARAM_STR);
+                        $stmt->bindParam(':logoPath', $logoPath, PDO::PARAM_STR);
+                        $stmt->bindParam(':name', $name, PDO::PARAM_STR);
+                        $stmt->execute(); 
+                    }
+
+
+                    if(isset($_SERVER['HTTP_CATEGORIES']) && $_SERVER['HTTP_CATEGORIES'] !== ""){
+
+                        $newCategories = $_SERVER['HTTP_CATEGORIES']; 
                         $arrayIdCategory = explode(',', $newCategories);
 
-                        $sql = "select categories.id from technologies right join technologies_categories on technologies.id = technologies_categories.technology_id left join categories on technologies_categories.category_id = categories.id where technologies.name = ':name'";
+                        $sql = "select categories.id from technologies right join technologies_categories on technologies.id = technologies_categories.technology_id left join categories on technologies_categories.category_id = categories.id where technologies.name = :name";
                         $stmt = $conn->prepare($sql);
                         $stmt->bindParam(':name', $name, PDO::PARAM_STR);
                         $stmt->execute();
@@ -142,12 +178,17 @@ switch($method){
                         $categoriesId = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         
 
-                        foreach($categoriesId as $categoryId){
-                            $sql = "DELETE FROM technologies_categories WHERE technology_id = :technology_id AND category_id = :category_id";
-                            $stmt = $conne->prepare($sql);
-                            $stmt->bindParam(':technology_id', $idResult, PDO::PARAM_INT);
-                            $stmt->bindParam(':category_id', $categoryId, PDO::PARAM_INT);
-                            $stmt->execute();
+                        foreach($categoriesId as $categoryIdArray){
+
+                            foreach($categoryIdArray as $categoryId){
+                           
+                                $sql = "DELETE FROM technologies_categories WHERE technology_id = :technology_id AND category_id = :category_id";
+                                $stmt = $conn->prepare($sql);
+                                $stmt->bindParam(':technology_id', $idResult, PDO::PARAM_INT);
+                                $stmt->bindParam(':category_id', $categoryId, PDO::PARAM_INT);
+                                $stmt->execute();
+                                }
+                            
                         }
 
                         foreach($arrayIdCategory as $rowId){
@@ -163,7 +204,7 @@ switch($method){
                                 // Existance vérifiée, on associe l'id du nom de la technologie créee aux catégories sélectionnées existante
                                 $sql = "INSERT INTO technologies_categories (technology_id, category_id) VALUES (:technology_id,:category_id)";
                                 $stmt = $conn->prepare($sql);
-                                $stmt->bindParam(':technology_id', $technology_id, PDO::PARAM_INT); 
+                                $stmt->bindParam(':technology_id', $idResult, PDO::PARAM_INT); 
                                 $stmt->bindParam(':category_id', $rowId, PDO::PARAM_INT); 
                                 $stmt->execute(); 
     
@@ -175,9 +216,26 @@ switch($method){
                                 // si l'id rentré n'a pas de name dans le tableau
                                 echo "L'identifiant $rowId ne correspond à aucune catégorie.\n";
                             }
+                        }
                     }
 
-                }
+
+
+                    // modifie le nom actuelle par le nouveau
+             
+                    if(isset($_SERVER['HTTP_NEWNAME']) && $_SERVER['HTTP_NEWNAME'] !== "" ){
+
+                        $new_name = $_SERVER['HTTP_NEWNAME'];
+
+                        $sql = "UPDATE technologies set name = :newname where name = :name";
+                        $stmt = $conn->prepare($sql); 
+                        $stmt->bindParam(':newname', $new_name, PDO::PARAM_STR);
+                        $stmt->bindParam(':name', $name, PDO::PARAM_STR); 
+                        $stmt->execute();
+
+                        echo "$name à bien été modifié par $new_name.\n";
+                  
+                    }
                 }
              
             }
