@@ -12,12 +12,17 @@ switch($method){
 
     case 'GET': 
         
-        $sql = "select technologies.id,  technologies.name as Technology, GROUP_CONCAT(categories.name SEPARATOR ', ') AS Categories  FROM technologies  RIGHT JOIN technologies_categories ON technologies.id = technologies_categories.technology_id  LEFT JOIN categories ON technologies_categories.category_id = categories.id  GROUP BY technologies.id";
+        $sql = "SELECT
+        technologies.id,
+        technologies.name AS Technologie,
+        GROUP_CONCAT(DISTINCT categories.name SEPARATOR ', ') AS Catégories,
+        GROUP_CONCAT(DISTINCT ressources.url SEPARATOR ', ') AS Ressources FROM technologies LEFT JOIN technologies_categories ON technologies.id = technologies_categories.technology_id LEFT JOIN categories ON technologies_categories.category_id = categories.id LEFT JOIN ressources ON technologies.id = ressources.technology_id GROUP BY technologies.id";
         $stmt = $conn->prepare($sql); 
         $stmt->execute(); 
         $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         echo json_encode(['Status' => 'succes', 'data' => $result]);
+        
         break;
     
         case 'POST':
@@ -48,12 +53,29 @@ switch($method){
                     // Déplacez le fichier téléchargé vers le dossier spécifié
                     move_uploaded_file($logoTempPath, $logoFullPath);
 
+
+                    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+
+                    // Nom du serveur
+                    $server = $_SERVER['HTTP_HOST'];
+                    
+                    // Chemin du script
+                    $script_path = $_SERVER['SCRIPT_NAME'];
+            
+                    $uri = $_SERVER['REQUEST_URI'];
+                    
+                    // Combiner les parties pour obtenir l'URL complète
+                    $url = $protocol . '://' . $server . $uri . '/logo' . '/' . $logoName ;
+            
+                 
+
                     // on créer la technologie
-                    $sql = "INSERT INTO technologies(name, logo_name, logo_path) VALUES (:name, :logoName, :logoPath)";
+                    $sql = "INSERT INTO technologies(name, logo_name, logo_path, url_logo) VALUES (:name, :logoName, :logoPath, :url)";
                     $stmt = $conn->prepare($sql); 
                     $stmt->bindParam(':name', $name, PDO::PARAM_STR);
                     $stmt->bindParam(':logoName', $logoName, PDO::PARAM_STR);
                     $stmt->bindParam(':logoPath', $logoFullPath, PDO::PARAM_STR);
+                    $stmt->bindParam(':url', $url, PDO::PARAM_STR); 
                     $stmt->execute();
 
                     echo "Vous avez ajouter le logo '$logoName' \n";
@@ -123,11 +145,12 @@ switch($method){
 
                 $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
-                $nameResult = $result['name'];
-                $idResult = $result['id'];
 
-                if($nameResult){
 
+                if($result){
+
+                    $nameResult = $result['name'];
+                    $idResult = $result['id'];
 
                     if(isset($_SERVER['CONTENT_TYPE'])){
                         $input = file_get_contents("php://input");
@@ -156,11 +179,25 @@ switch($method){
 
                         echo "L'image '$logoName' a été reçue avec succès. \n";
 
-                        $sql = 'UPDATE technologies set logo_name = :logoName, logo_path = :logoPath WHERE name = :name'; 
+                        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+
+                    // Nom du serveur
+                    $server = $_SERVER['HTTP_HOST'];
+                    
+                    // Chemin du script
+                    $script_path = $_SERVER['SCRIPT_NAME'];
+            
+                    $uri = $_SERVER['REQUEST_URI'];
+                    
+                    // Combiner les parties pour obtenir l'URL complète
+                    $url = $protocol . '://' . $server . $uri . '/logo' . '/' . $logoName ;
+
+                        $sql = 'UPDATE technologies set logo_name = :logoName, logo_path = :logoPath, url_logo = :url WHERE name = :name'; 
                         $stmt = $conn->prepare($sql); 
                         $stmt->bindParam(':logoName', $logoName, PDO::PARAM_STR);
                         $stmt->bindParam(':logoPath', $logoPath, PDO::PARAM_STR);
                         $stmt->bindParam(':name', $name, PDO::PARAM_STR);
+                        $stmt->bindParam(':url', $url, PDO::PARAM_STR); 
                         $stmt->execute(); 
                     }
 
@@ -256,9 +293,6 @@ switch($method){
 
                             $logoNewPath = '/var/www/html/logo/' . $logoNewName;
 
-                            echo "$logoNewName \n";
-                            echo "$logoNewPath \n";
-
                             $sql = "UPDATE technologies SET logo_name = :logoName, logo_path = :logoPath WHERE name = :name"; 
                             $stmt = $conn->prepare($sql);
                             $stmt->bindParam(':logoName', $logoNewName, PDO::PARAM_STR);
@@ -283,6 +317,8 @@ switch($method){
                             }
                         }
                     }
+                } else {
+                    echo "La technologie '$name' n'existe pas.";
                 }
             } else {
                 echo "Dans Headers une clé 'name' et sa valeur représentant le nom d'une technologie existante dans la base de données.\n";
@@ -301,7 +337,7 @@ switch($method){
         if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
             
             if(isset($_DELETE['name']) && $_DELETE['name'] !== ""){
-                echo 'salut';
+                
                 $name = $_DELETE['name']; 
 
                 $sql = "SELECT id, name, logo_path FROM technologies WHERE name = :name";
@@ -328,7 +364,7 @@ switch($method){
                                 }
                             }
 
-                            $sql = "UPDATE technologies SET logo_name = NULL, logo_path = NULL WHERE name = :name";
+                            $sql = "UPDATE technologies SET logo_name = NULL, logo_path = NULL, url_logo = NULL WHERE name = :name";
                             $stmt = $conn->prepare($sql); 
                             $stmt->bindParam(':name', $name, PDO::PARAM_STR);
                             $stmt->execute();
@@ -396,6 +432,6 @@ switch($method){
             }
         } 
 }
-// il faut créer un trigger pour pouvoir supprimer les technologies qui sont liée a des ressources
+// url_logo prend le nom du vrai fichier et pas le nom de la tehcnologie, il faut faire le sql pour avoir le chemin dans l'api 
 ?>
 
