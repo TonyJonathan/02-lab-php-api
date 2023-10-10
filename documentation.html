@@ -5,48 +5,80 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&family=Merriweather+Sans:wght@500;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <h1>DOCUMENTATION DE L'API</h1>
-        <h2>INTRODUCTION</h2>
-                <p>Cette documentation fournit des informations détaillées pour accéder à diverses ressources, mais aussi pour les modifier ou encore les supprimées.</p>
+    <div class="container">
+        <h1>DOCUMENTATION DE L'API</h1>
+            <h2>INTRODUCTION</h2>
+                    <p>Cette documentation fournit des informations détaillées pour accéder à diverses ressources, mais aussi pour les modifier ou encore les supprimées.</p>
 
-        <h2>ROUTES</h2>
-            <h3>/technologies</h3>
-                <ul>
-                    <li>
-                        <p><span>GET: </span>Récupère la liste des technologies. Aucune donnée n'est nécessaire.</p>
-                    </li>
+            <h2>ROUTES</h2>
+                <h3>/technologies</h3>
+                    <ul>
+                        <li>
+                            <p><span>GET: </span>Récupère la liste des technologies. Aucune donnée n'est nécessaire.</p>
+                        </li>
 
-                    <li>
-                        <p><span>POST: </span>Ajoute une nouvelle technologie. Données nécessaires (dans form-data):</p>
-                        <ul>
-                          <li><p>Key : 'name'   / Value : 'Nom de la technologie'</p></li>
-                          <li><p>Key : 'categories' / Value : 'Identifiants des catégories à lier' (ex : 1,8,10)</p></li>
-                          <li><p>Key : 'logo'   / Value : Chemin vers le fichier</p></li>
-                        </ul>
-                    </li>
-
-                    <li><p><span>PUT: </span>Met à jour une technologie existante. Données nécessaires (dans le Header et dans Body > binary pour le logo) :  </p>
-                        <ul>
-                          <li><p>Key : 'name'   / Value : 'Nom de la technologie'</p></li>
-                          <li><p>Key : 'newname' / Value : 'Nouveau nom de la technologie'</p></li>
-                          <li><p>Key : 'categories'   / Value : 'Identifiants des catégories à lier' (ex : 1,8,10)</p></li>
-                          <li><p>Selectionez le chemin vers le fichier du logo dans Body > binary</p></li>
-                        </ul>
-                    </li>
-
-                    <li><p><span>DELETE: </span>Supprime des élements de la technologie, liés à la technologie et même la technologie dans son ensemble. Données nécessaires (dans x-www-form-encoded):</p>
-                        <ul>
+                        <li>
+                            <p><span>POST: </span>Ajoute une nouvelle technologie. Données nécessaires (dans form-data):</p>
+                            <ul>
                             <li><p>Key : 'name'   / Value : 'Nom de la technologie'</p></li>
-                            <li><p>Key : 'categories' / Value : 'Identifiants des catégories à supprimer' (ex : 1,8,10)</p></li>
-                            <li><p>Key : 'logo'   (sans Value)</p></li>
-                            <li><p>Key : 'all'   (sans Value)</p></li>
-                        </ul>
-                    </li>
-                </ul>
+                            <li><p>Key : 'categories' / Value : 'Identifiants des catégories à lier' (ex : 1,8,10)</p></li>
+                            <li><p>Key : 'logo'   / Value : Chemin vers le fichier</p></li>
+                            </ul>
+                        </li>
 
-    
+                        <li><p><span>PUT: </span>Met à jour une technologie existante. Données nécessaires (dans le Header et dans Body > binary pour le logo) :  </p>
+                            <ul>
+                            <li><p>Key : 'name'   / Value : 'Nom de la technologie'</p></li>
+                            <li><p>Key : 'newname' / Value : 'Nouveau nom de la technologie'</p></li>
+                            <li><p>Key : 'categories'   / Value : 'Identifiants des catégories à lier' (ex : 1,8,10)</p></li>
+                            <li><p>Selectionez le chemin vers le fichier du logo dans Body > binary</p></li>
+                            </ul>
+                        </li>
+
+                        <li><p><span>DELETE: </span>Supprime des élements de la technologie, liés à la technologie et même la technologie dans son ensemble. Données nécessaires (dans x-www-form-encoded):</p>
+                            <ul>
+                                <li><p>Key : 'name'   / Value : 'Nom de la technologie'</p></li>
+                                <li><p>Key : 'categories' / Value : 'Identifiants des catégories à supprimer' (ex : 1,8,10)</p></li>
+                                <li><p>Key : 'logo'   (sans Value)</p></li>
+                                <li><p>Key : 'all'   (sans Value)</p></li>
+                            </ul>
+                        </li>
+                    </ul>
+
+
+                    <h3>/categories</h3>
+                    <ul>
+                        <li>
+                            <p><span>GET: </span>Récupère la liste des categories. Aucune donnée n'est nécessaire.</p>
+                        </li>
+
+                        <li>
+                            <p><span>POST: </span>Ajoute une nouvelle catégorie. Donnée nécessaire (dans x-www-form-encoded):</p>
+                            <ul>
+                            <li><p>Key : 'name'   / Value : 'Nom de la nouvelle catégorie'</p></li>
+                            </ul>
+                        </li>
+
+                        <li><p><span>PUT: </span>Met à jour une catégorie existante. Données nécessaires (dans x-www-form-encoded) :  </p>
+                            <ul>
+                            <li><p>Key : 'id'   / Value : 'Identifiant de la catégorieque vous souhaitez modifier'</p></li>
+                            <li><p>Key : 'name' / Value : 'Nouveau nom de la catégories'</p></li>
+                            </ul>
+                        </li>
+
+                        <li><p><span>DELETE: </span>Supprime une catégorie. Donnée nécessaire (dans x-www-form-encoded):</p>
+                            <ul>
+                                <li><p>Key : 'name'   / Value : 'Nom de la catégorie'</p></li>
+                            </ul>
+                        </li>
+                    </ul>
+
+    </div>
 </body>
 </html>
