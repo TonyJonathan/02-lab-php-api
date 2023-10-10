@@ -79,6 +79,34 @@
                         </li>
                     </ul>
 
+                    <h3>/ressources</h3>
+                    <ul>
+                        <li>
+                            <p><span>GET: </span>Récupère la liste des ressources. Aucune donnée n'est nécessaire.</p>
+                        </li>
+
+                        <li>
+                            <p><span>POST: </span>Ajoute une nouvelle ressource. Donnée nécessaire (dans x-www-form-encoded):</p>
+                            <ul>
+                            <li><p>Key : 'id'   / Value : 'Identifiant de la technologie concernée'</p></li>
+                            <li><p>Key : 'url'   / Value : 'URL de la ressource'</p></li>
+                            </ul>
+                        </li>
+
+                        <li><p><span>PUT: </span>Met à jour une ressource existante. Données nécessaires (dans x-www-form-encoded) :  </p>
+                            <ul>
+                                <li><p>Key : 'id'   / Value : 'Identifiant de la technologie concernée'</p></li>
+                                <li><p>Key : 'url'   / Value : 'Nouvel URL de la ressource'</p></li>
+                            </ul>
+                        </li>
+
+                        <li><p><span>DELETE: </span>Supprime une ressource. Donnée nécessaire (dans x-www-form-encoded):</p>
+                            <ul>
+                                <li><p>Key : 'id'   / Value : 'Identifiant de la ressource concernée'</p></li>
+                            </ul>
+                        </li>
+                    </ul>
+
     </div>
 </body>
 </html>
