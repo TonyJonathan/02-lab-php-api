@@ -103,7 +103,7 @@ switch($method){
                 }
               
             } else {
-                echo "Insérer 'name' dans la clé, le nom de la nouvelle technologie en value. Insérer également 'id' en dans une autre clé et ajouter la ou les identifiants des catégories à associer dans value (exemple de value: 1,3,8). La 3e et dernière clé a inserer est 'logo', suivie de la value qui sera un fichier présent dans le dossier logo";
+                echo "Insérer 'name' dans la clé, le nom de la nouvelle technologie en value. Insérer également 'catégories' en dans une autre clé et ajouter la ou les identifiants des catégories à associer dans value (exemple de value: 1,3,8). La 3e et dernière clé a inserer est 'logo', suivie de la value qui sera un fichier présent dans le dossier logo";
             }
 
         break;
@@ -284,6 +284,11 @@ switch($method){
                         }
                     }
                 }
+            } else {
+                echo "Dans Headers une clé 'name' et sa valeur représentant le nom d'une technologie existante dans la base de données.\n";
+                echo "Pour changer le nom d'une technologie il faut rajouter une clé 'newname' ainsi que sa valeur représentant le nouveau nom que l'on souhaite donner à la technologie. \n";
+                echo "Pour lier des categories à une technologie, inserez la clé 'categories' et comme value rentrez l'ensemble des catégories que vous souhaitez voir associées à la technologie sous cette forme ex: 2,8,10,11. \n"; 
+                echo "Pour ajouter un logo à la technologie, il faut sélectionner un fichier dans Body > binary. \n";
             }
         } 
     break;
@@ -296,6 +301,7 @@ switch($method){
         if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
             
             if(isset($_DELETE['name']) && $_DELETE['name'] !== ""){
+                echo 'salut';
                 $name = $_DELETE['name']; 
 
                 $sql = "SELECT id, name, logo_path FROM technologies WHERE name = :name";
@@ -309,18 +315,15 @@ switch($method){
 
                     $id = $result['id']; 
                     
-                    if(isset($_DELETE['logo'])){
+                    if(isset($_DELETE['logo']) || isset($_DELETE['all'])){
                         
-                        if($result['logo_path'] !== null || $result['logo_path'] !== ""){
+                        if($result['logo_path'] !== null && $result['logo_path'] !== ""){
                             $logoPath = $result['logo_path']; 
-
-                            
 
                             if(file_exists($logoPath)){
                                 if(unlink($logoPath)){
                                     echo "Le logo lié à la technologie $name à bien été supprimé. \n";
                                 } else {
-    
                                     echo "Erreur lors de la suppression du logo. \n";
                                 }
                             }
@@ -366,19 +369,33 @@ switch($method){
                                 echo "La technologie '$name' n'est pas liée à une catégories dont l'identifiant est '$categoryId'. \n"; 
                             }      
                               
-                            
                         }
 
-                      
-
                     }
+
                     
+                if(isset($_DELETE['all'])){
+                    $sql = "DELETE FROM technologies WHERE name = :name";
+                    $stmt = $conn->prepare($sql);
+                    $stmt->bindParam(':name', $name, PDO::PARAM_STR);
+                    $stmt->execute(); 
+
+                    echo "La technologie '$name' à complètement été supprimée. \n";
+                }
                     
                 } else {
                     echo "Il n'existe pas de technologies portant le nom $name. \n";
                 }
-            }
-        }
-}
 
+
+            } else {
+                echo "Inserez la clé 'name' ainsi que le nom de la technologie en valeur. \n";
+                echo "Si vous souhaitez supprimer des liaisons avec les catégories, inserez la clé 'catégorie' et ajoutez en valeur le ou les identifiants des différentes catégories, ex : 2,3,8,10. \n";
+                echo "Si vous souhaitez supprimer le logo de la technologie, inserez simplement la clé 'logo', sans valeur. \n";
+                echo "Si vous souhaitez supprimer la technologie dans son ensemble, inserez la clé 'all', sans valeur. \n";
+            }
+        } 
+}
+// il faut créer un trigger pour pouvoir supprimer les technologies qui sont liée a des ressources
 ?>
+
