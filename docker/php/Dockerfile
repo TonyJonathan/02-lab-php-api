@@ -8,3 +8,5 @@ RUN mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
 # Active le module mod_rewrite
 RUN a2enmod rewrite
 
+COPY .htaccess /var/www/html/.htaccess
+COPY index.php /var/www/html/index.php

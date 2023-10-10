@@ -16,6 +16,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 $uri = explode('/', trim($_SERVER['REQUEST_URI'], '/'));
 
 
+
  // Établir une connexion à la base de données avec PDO
  $servername = "mysql:host=mysql";
  $username = getenv("MYSQL_USER");
@@ -24,20 +25,27 @@ $uri = explode('/', trim($_SERVER['REQUEST_URI'], '/'));
  
  $conn = new PDO("$servername;dbname=$dbname; charset=utf8", $username, $password_db);
 
-
+echo $uri[0]; 
 // Routeur
  switch($uri[0]){
 
     case 'technologies':
-        return require("technologie.php");
+        require("technologies.php");
         break;
 
     case 'categories': 
-        return require('categories.php'); 
+        require('categories.php'); 
         break;
 
     case 'ressources': 
-        return require('ressources.php');
+        // require('ressources.php');
+        echo $uri[0];
+        break;
+
+    // Case DEFAULT en cas de route inconnue
+    default:
+    require("documentation.html");
+        echo json_encode(['status' => 'failure', 'message' => 'Route not found']);
         break;
  }
 
