@@ -42,7 +42,7 @@ switch($method){
         technologies.id,
         technologies.name AS Technologie,
         GROUP_CONCAT(DISTINCT categories.name SEPARATOR ', ') AS Catégories,
-        GROUP_CONCAT(DISTINCT ressources.url SEPARATOR ', ') AS Ressources FROM technologies LEFT JOIN technologies_categories ON technologies.id = technologies_categories.technology_id LEFT JOIN categories ON technologies_categories.category_id = categories.id LEFT JOIN ressources ON technologies.id = ressources.technology_id GROUP BY technologies.id";
+        GROUP_CONCAT(DISTINCT ressources.url SEPARATOR ', ') AS Ressources, technologies.url_logo AS Logo FROM technologies LEFT JOIN technologies_categories ON technologies.id = technologies_categories.technology_id LEFT JOIN categories ON technologies_categories.category_id = categories.id LEFT JOIN ressources ON technologies.id = ressources.technology_id GROUP BY technologies.id";
         $stmt = $conn->prepare($sql); 
         $stmt->execute(); 
         $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
