@@ -8,6 +8,32 @@ $dbname = getenv("MYSQL_DATABASE");
 
 $conn = new PDO("$servername;dbname=$dbname; charset=utf8", $username, $password_db);
 
+
+$protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+
+// Nom du serveur
+$server = $_SERVER['HTTP_HOST'];
+
+// Chemin du script
+$script_path = $_SERVER['SCRIPT_NAME'];
+
+$uri = $_SERVER['REQUEST_URI'];
+
+
+function getExtensionFromMimeType($mimeType) {
+    // Logique pour mapper les types de contenu MIME à des extensions de fichiers
+    $mimeToExtensionMap = array(
+        'image/jpeg' => 'jpg',
+        'image/png'  => 'png',
+        'image/gif'  => 'gif',
+        'image/webp' => 'webp',
+        // Ajoutez d'autres mappages au besoin
+    );
+
+    // Recherche de l'extension dans le tableau
+    return isset($mimeToExtensionMap[$mimeType]) ? $mimeToExtensionMap[$mimeType] : 'png';
+}
+
 switch($method){
 
     case 'GET': 
@@ -41,7 +67,25 @@ switch($method){
                     echo "La technologie '$name' existe déja."; 
                 } else {
                     
-                    $logoName = $_FILES['logo']['name']; 
+                    function getExtensionFromMimeType($mimeType) {
+                        // Logique pour mapper les types de contenu MIME à des extensions de fichiers
+                        $mimeToExtensionMap = array(
+                            'image/jpeg' => 'jpg',
+                            'image/png'  => 'png',
+                            'image/gif'  => 'gif',
+                            'image/webp' => 'webp',
+                            // Ajoutez d'autres mappages au besoin
+                        );
+                    
+                        // Recherche de l'extension dans le tableau
+                        return isset($mimeToExtensionMap[$mimeType]) ? $mimeToExtensionMap[$mimeType] : 'png';
+                    }
+                    
+                
+                    $file_extension = isset($_SERVER['CONTENT_TYPE']) ? getExtensionFromMimeType($_SERVER['CONTENT_TYPE']) : 'png';
+
+                    $logoName = $name . "." . $file_extension;
+
                     $logoPath = '/var/www/html/logo/';
 
                     // variable qui stocke le chemin temporaire du fichier téléchargé
@@ -152,53 +196,51 @@ switch($method){
                     $nameResult = $result['name'];
                     $idResult = $result['id'];
 
-                    if(isset($_SERVER['CONTENT_TYPE'])){
+                    // Vérifie si un logo existe déja 
+                    $sql = 'SELECT logo_name FROM technologies WHERE name = :name';
+                    $stmt = $conn->prepare($sql);
+                    $stmt->bindParam(':name', $name, PDO::PARAM_STR); 
+                    $stmt->execute();
+                    $logoResult = $stmt->fetch(PDO::FETCH_ASSOC);
+
+
+                    // si l'on modifier ou ajouter un logo sans modifier le nom
+                    if(isset($_SERVER['CONTENT_TYPE']) && $_SERVER['HTTP_NEWNAME'] == ""){
+                        
+                        // Dans le cas ou un logo serait déja présent, on le supprime en amont
+                        if($logoResult['logo_name'] !== null){
+                            $logoName = $logoResult['logo_name'];
+                            $logoOldPath = '/var/www/html/logo/' . $logoName;
+                            unlink($logoOldPath);
+                        }
+
+                        // Récupère le logo dans binary
                         $input = file_get_contents("php://input");
 
-                        function getExtensionFromMimeType($mimeType) {
-                            // Logique pour mapper les types de contenu MIME à des extensions de fichiers
-                            $mimeToExtensionMap = array(
-                                'image/jpeg' => 'jpg',
-                                'image/png'  => 'png',
-                                'image/gif'  => 'gif',
-                                'image/webp' => 'webp',
-                                // Ajoutez d'autres mappages au besoin
-                            );
-                        
-                            // Recherche de l'extension dans le tableau
-                            return isset($mimeToExtensionMap[$mimeType]) ? $mimeToExtensionMap[$mimeType] : 'png';
-                        }
-                        
-                    
+                        // Défini l'extension du logo grâce à la fonction getExtensionFromMimeType en haut du fichier
                         $file_extension = isset($_SERVER['CONTENT_TYPE']) ? getExtensionFromMimeType($_SERVER['CONTENT_TYPE']) : 'png';
 
-                        $logoName = $name . "." . $file_extension;
-                        $logoPath = '/var/www/html/logo/' . $logoName;
+                        // défini le nouveau nom du logo et son nouveau chemin 
+                        $newLogoName = $name . "." . $file_extension;
+                        $logoPath = '/var/www/html/logo/' . $newLogoName;
 
+                        // insert le nouveau logo dans l'environnement docker 
                         file_put_contents($logoPath, $input); 
 
-                        echo "L'image '$logoName' a été reçue avec succès. \n";
+                        echo "L'image '$newLogoName' a été reçue avec succès. \n";
 
-                        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+                        // Combiner les parties pour obtenir l'URL complète
+                        $url = $protocol . '://' . $server . $uri . '/logo' . '/' . $newLogoName ;
 
-                    // Nom du serveur
-                    $server = $_SERVER['HTTP_HOST'];
-                    
-                    // Chemin du script
-                    $script_path = $_SERVER['SCRIPT_NAME'];
-            
-                    $uri = $_SERVER['REQUEST_URI'];
-                    
-                    // Combiner les parties pour obtenir l'URL complète
-                    $url = $protocol . '://' . $server . $uri . '/logo' . '/' . $logoName ;
-
+                        // Modifie les différentes infos liées au logo dans la base de données
                         $sql = 'UPDATE technologies set logo_name = :logoName, logo_path = :logoPath, url_logo = :url WHERE name = :name'; 
                         $stmt = $conn->prepare($sql); 
-                        $stmt->bindParam(':logoName', $logoName, PDO::PARAM_STR);
+                        $stmt->bindParam(':logoName', $newLogoName, PDO::PARAM_STR);
                         $stmt->bindParam(':logoPath', $logoPath, PDO::PARAM_STR);
                         $stmt->bindParam(':name', $name, PDO::PARAM_STR);
                         $stmt->bindParam(':url', $url, PDO::PARAM_STR); 
                         $stmt->execute(); 
+
                     }
 
 
@@ -257,7 +299,6 @@ switch($method){
                     }
 
 
-
                     // modifie le nom actuelle par le nouveau
             
                     if(isset($_SERVER['HTTP_NEWNAME']) && $_SERVER['HTTP_NEWNAME'] !== "" ){
@@ -272,36 +313,37 @@ switch($method){
 
                         echo "$name à bien été modifié par $new_name.\n";
 
-                        $sql = 'SELECT logo_name FROM technologies WHERE name = :name';
-                        $stmt = $conn->prepare($sql);
-                        $stmt->bindParam(':name', $new_name, PDO::PARAM_STR); 
-                        $stmt->execute();
-                        $logoResult = $stmt->fetch(PDO::FETCH_ASSOC);
+                       
+                        // Dans le cas ou un logo existe, et que l'on modifie le nom sans modifier le logo
+                        if($logoResult['logo_name'] !== null && !isset($_SERVER['CONTENT_TYPE'])){
 
-                        if($logoResult['logo_name'] !== null){
-
-                            
+                            // récupere l'ancien nom du logo et son chemin
                             $logoName = $logoResult['logo_name'];
                             $logoOldPath = '/var/www/html/logo/' . $logoName;
-
-
+                            
+                            // récupere l'extension 
                             $logoNameParts = explode('.', $logoName);
 
                             $logoNameExtension = $logoNameParts[1]; 
 
+                            // Change l'ancien nom/chemin/url par le nouveau avec la meme extension
                             $logoNewName = $new_name . '.' . $logoNameExtension;
 
                             $logoNewPath = '/var/www/html/logo/' . $logoNewName;
+                            $url = $protocol . '://' . $server . $uri . '/logo' . '/' . $logoNewName ;
 
-                            $sql = "UPDATE technologies SET logo_name = :logoName, logo_path = :logoPath WHERE name = :name"; 
+                            //Insert les modifications dans la base de données 
+                            $sql = "UPDATE technologies SET logo_name = :logoName, logo_path = :logoPath, url_logo = :url WHERE name = :name"; 
                             $stmt = $conn->prepare($sql);
                             $stmt->bindParam(':logoName', $logoNewName, PDO::PARAM_STR);
                             $stmt->bindParam(':logoPath', $logoNewPath, PDO::PARAM_STR);
                             $stmt->bindParam(':name', $new_name, PDO::PARAM_STR); 
+                            $stmt->bindParam(':url', $url, PDO::PARAM_STR); 
                             $stmt->execute();
 
-                            echo "Logo_name et logo_path ont été renommés dans la base de données. \n";
+                            echo "Logo_name, logo_path et url_logo ont été renommés dans la base de données. \n";
 
+                            // Modifie le nom du fichier dans l'environnement docker 
                             if(file_exists($logoOldPath)){
 
                                 if(rename($logoOldPath, $logoNewPath)){
@@ -315,6 +357,74 @@ switch($method){
                             } else {
                                 echo "Aucun logo pour cette technologie. \n";
                             }
+
+                            // Dans le cas ou un logo existe, que l'on modifie le nom et le logo (dans binary)
+                        } else if($logoResult['logo_name'] !== null && isset($_SERVER['CONTENT_TYPE'])){
+
+                            // récupère le nouveau fichier
+                            $input = file_get_contents("php://input");
+
+                            // défini son extension grâce a la fonction 
+                            $file_extension = isset($_SERVER['CONTENT_TYPE']) ? getExtensionFromMimeType($_SERVER['CONTENT_TYPE']) : 'png';
+
+                            // Ancien nom/chemin
+                            $logoName = $logoResult['logo_name'];
+                            $logoOldPath = '/var/www/html/logo/' . $logoName;
+
+                            // nouveau nom/chelin
+                        
+                            $logoNewName = $new_name . '.' . $file_extension;
+
+                            $logoNewPath = '/var/www/html/logo/' . $logoNewName;
+            
+                            
+                            file_put_contents($logoOldPath, $input); 
+
+                            echo "L'image '$logoNewName' a été reçue avec succès. \n";
+
+                            // Combiner les parties pour obtenir l'URL complète
+                            $url = $protocol . '://' . $server . $uri . '/logo' . '/' . $logoNewName ;
+
+                            $sql = 'UPDATE technologies set logo_name = :logoName, logo_path = :logoPath, url_logo = :url WHERE name = :name'; 
+                            $stmt = $conn->prepare($sql); 
+                            $stmt->bindParam(':logoName', $logoNewName, PDO::PARAM_STR);
+                            $stmt->bindParam(':logoPath', $logoNewPath, PDO::PARAM_STR);
+                            $stmt->bindParam(':name', $new_name, PDO::PARAM_STR);
+                            $stmt->bindParam(':url', $url, PDO::PARAM_STR); 
+                            $stmt->execute(); 
+
+                            rename($logoOldPath, $logoNewPath);
+
+                            echo "Le fichier à été renommé avec succès.\n";
+                      
+                        } else if($logoResult['logo_name'] == null && isset($_SERVER['CONTENT_TYPE'])) {
+
+                        // Récupère le logo dans binary
+                        $input = file_get_contents("php://input");
+
+                        // Défini l'extension du logo grâce à la fonction getExtensionFromMimeType en haut du fichier
+                        $file_extension = isset($_SERVER['CONTENT_TYPE']) ? getExtensionFromMimeType($_SERVER['CONTENT_TYPE']) : 'png';
+
+                        // défini le nouveau nom du logo et son nouveau chemin 
+                        $newLogoName = $new_name . "." . $file_extension;
+                        $logoPath = '/var/www/html/logo/' . $newLogoName;
+
+                        // insert le nouveau logo dans l'environnement docker 
+                        file_put_contents($logoPath, $input); 
+
+                        echo "L'image '$newLogoName' a été reçue avec succès. \n";
+
+                        // Combiner les parties pour obtenir l'URL complète
+                        $url = $protocol . '://' . $server . $uri . '/logo' . '/' . $newLogoName ;
+
+                        // Modifie les différentes infos liées au logo dans la base de données
+                        $sql = 'UPDATE technologies set logo_name = :logoName, logo_path = :logoPath, url_logo = :url WHERE name = :name'; 
+                        $stmt = $conn->prepare($sql); 
+                        $stmt->bindParam(':logoName', $newLogoName, PDO::PARAM_STR);
+                        $stmt->bindParam(':logoPath', $logoPath, PDO::PARAM_STR);
+                        $stmt->bindParam(':name', $new_name, PDO::PARAM_STR);
+                        $stmt->bindParam(':url', $url, PDO::PARAM_STR); 
+                        $stmt->execute(); 
                         }
                     }
                 } else {
